@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Webs AI Builder — Full Page Editor</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app" class="fullpage">
+    <header class="topbar">
+      <h1>Webs — AI Site Customizer</h1>
+      <div class="top-actions">
+        <label class="toggle"><input id="enable-js" type="checkbox" /> Allow JS in preview</label>
+        <button id="downloadBtn">Download HTML</button>
+        <button id="resetBtn">Reset Preview</button>
+      </div>
+    </header>
+
+    <main class="editor">
+      <aside class="leftpane">
+        <section class="chat">
+          <div id="messages" class="messages" aria-live="polite"></div>
+          <form id="promptForm" class="prompt-form">
+            <input id="promptInput" placeholder="Tell the bot what to build or change (e.g. 'Add a hero with CTA')" autocomplete="off"/>
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <section class="history">
+          <h3>Action History</h3>
+          <ul id="historyList"></ul>
+        </section>
+      </aside>
+
+      <section class="preview">
+        <h2>Live Preview</h2>
+        <iframe id="previewFrame" sandbox="allow-scripts" title="Live preview" srcdoc='<!doctype html><html><head><meta charset="utf-8"></head><body><div id="preview-body" style="font-family: system-ui, sans-serif; padding:20px; color:#0b1220;"><h2>Welcome — ask the AI to customize this page</h2><p>This preview is sandboxed. Use the AI panel to add sections, styles, or simple interactions.</p></div><script src="/preview-runner.js"></script></body></html>'></iframe>
+      </section>
+    </main>
+
+    <footer class="foot">Prototype — sandboxed iframe. Do NOT run untrusted code in production.</footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
