@@ -1,5 +1,3 @@
-// public/app.js
-// Frontend chat UI + send to server + apply actions to preview iframe
 (function(){
   const messagesEl = document.getElementById('messages');
   const form = document.getElementById('promptForm');
@@ -9,6 +7,11 @@
   const historyList = document.getElementById('historyList');
   const downloadBtn = document.getElementById('downloadBtn');
   const resetBtn = document.getElementById('resetBtn');
+
+  const ebayForm = document.getElementById('ebayForm');
+  const ebayQuery = document.getElementById('ebayQuery');
+  const ebayMax = document.getElementById('ebayMax');
+  const ebayResults = document.getElementById('ebayResults');
 
   function addMessage(text, cls='bot'){
     const m = document.createElement('div');
@@ -66,6 +69,32 @@
     input.value = '';
     addMessage('Thinking…', 'bot');
     try {
+      // Quick heuristic: if user asked to scan eBay, call the ebay API instead of LLM
+      const ebayMatch = prompt.match(/scan ebay for (.+?) under \$?(\d+)/i);
+      if (ebayMatch) {
+        const query = ebayMatch[1].trim();
+        const max = parseFloat(ebayMatch[2]);
+        addMessage(`Scanning eBay for "${query}" under $${max}…`, 'bot');
+        const r = await fetch('/api/ebay', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query, maxPrice: max})
+        });
+        const data = await r.json();
+        if (data.items && data.items.length) {
+          addMessage(`Found ${data.items.length} listing(s):`, 'bot');
+          data.items.forEach(it => {
+            const el = document.createElement('div');
+            el.className = 'message bot';
+            const a = document.createElement('a');
+            a.href = it.url; a.textContent = `${it.title} — $${it.price}`; a.target = '_blank';
+            el.appendChild(a);
+            messagesEl.appendChild(el);
+          });
+        } else {
+          addMessage('No listings found under that price.', 'bot');
+        }
+        return;
+      }
+
       const aiResp = await callAI(prompt, []);
       const lastBotEl = Array.from(messagesEl.querySelectorAll('.message.bot')).pop();
       if (aiResp.raw_text) lastBotEl.textContent = aiResp.raw_text;
@@ -79,6 +108,34 @@
       }
     } catch (err) {
       addMessage('Error: ' + err.message, 'bot');
+    }
+  });
+
+  ebayForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = ebayQuery.value.trim();
+    const max = parseFloat(ebayMax.value);
+    if (!q) return alert('Please enter a search term');
+    ebayResults.innerHTML = 'Scanning…';
+    try {
+      const r = await fetch('/api/ebay', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query: q, maxPrice: max || null}) });
+      const data = await r.json();
+      ebayResults.innerHTML = '';
+      if (data.items && data.items.length) {
+        const ul = document.createElement('ul');
+        data.items.forEach(it => {
+          const li = document.createElement('li');
+          const a = document.createElement('a'); a.href = it.url; a.textContent = `${it.title} — $${it.price}`; a.target = '_blank';
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
+        ebayResults.appendChild(ul);
+        prependHistory(`eBay scan: ${q} under $${max || 'any'}`);
+      } else {
+        ebayResults.textContent = 'No deals found.';
+      }
+    } catch (err) {
+      ebayResults.textContent = 'Error: ' + err.message;
     }
   });
 

@@ -2,44 +2,34 @@
 
 This repository contains a prototype full-page AI-driven site customizer. The site runs a local Node/Express proxy to call the OpenAI API and a frontend UI that lets you send natural-language instructions to an LLM which returns structured "actions" (JSON) the frontend executes inside a sandboxed iframe preview.
 
-What the site does
-- Full-page editor: chat panel + live preview (iframe)
-- AI returns JSON actions: create/update/delete/css/eval/message
-- Preview runs inside a sandboxed iframe (srcdoc) and applies safe actions
-- Ability to download the preview HTML and reset the preview
+New feature: eBay scanner
+- The site now includes a small eBay scanning endpoint and UI so you can search eBay and return listings under a given max price.
+- Endpoint: POST /api/ebay { query: string, maxPrice: number }
+- The UI form "Scan eBay for Deals" will call this endpoint and list matching results.
 
-Security notes
-- The server does not (and must not) receive or run arbitrary code. The preview eval runs only inside the sandboxed iframe and only if you enable "Allow JS in preview".
-- Keep your OPENAI_API_KEY secret. Do not commit it to the repo.
+Security & policy notes
+- This prototype scrapes eBay's public search results pages. Scraping may violate eBay's terms of service; in production you should use the official eBay APIs (Finding API) with credentials and follow their developer policies.
+- Do not expose this server to untrusted users. Add rate-limiting, caching, and authentication before using publicly.
 
 Quick start (local)
-1. Clone the repo
+1. Clone:
+   git clone https://github.com/kianheyat2013-png/webs-ai-builder
+   cd webs-ai-builder
 2. Create a `.env` file with:
 
 ```
 OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 3. npm install
 4. npm start
 5. Open http://localhost:3000
 
-Deploy
-- Recommended: Render or Railway. Set environment variable `OPENAI_API_KEY` in the service's dashboard.
-- Start command: `node server.js`
+Notes
+- The eBay scanner is minimal: it parses visible prices on the search results page and returns items whose listed price is <= maxPrice (if provided). It does not account for shipping costs or sold/completed listings. Use it as a starting point and replace with official API calls for production.
 
-Files added
-- index.html — full-page editor
-- styles.css
-- public/app.js
-- public/preview-runner.js
-- server.js
-- package.json
-- README.md
-- .env.example
-
-If you want I can also:
-- Convert the server to a serverless function (for Vercel)
-- Add a JSON schema validator for model responses
-- Add a simple project save/load feature
-
+If you want, I can next:
+- Replace scraping with calls to the eBay Finding API (requires your eBay AppID) and add caching.
+- Add notifications (email/webhook) to send found links automatically.
+- Harden the endpoint with rate-limiting and authentication.

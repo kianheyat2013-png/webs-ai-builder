@@ -1,10 +1,12 @@
 // Simple Express server that proxies requests to OpenAI and instructs the model to return JSON actions.
+// Also exposes a small eBay scanner endpoint which fetches eBay search results and returns listings under a max price.
 // Requires an environment variable OPENAI_API_KEY
 import express from 'express';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cheerio from 'cheerio';
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +94,43 @@ Do not include anything outside the JSON block unless absolutely necessary. If y
   } catch (err) {
     console.error(err);
     res.status(500).send(err.toString());
+  }
+});
+
+// Simple eBay scanner endpoint (scrapes search results)
+// NOTE: Scraping eBay may violate their terms of service; prefer using the official eBay API with credentials.
+// This endpoint is intentionally minimal and should be used responsibly with rate-limiting and caching in production.
+app.post('/api/ebay', async (req, res) => {
+  const { query, maxPrice } = req.body || {};
+  if (!query) return res.status(400).send('Missing query');
+
+  try {
+    const searchUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sop=10`;
+    const r = await fetch(searchUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; webs-ai-builder/1.0)' } });
+    if (!r.ok) return res.status(500).send('eBay fetch failed: ' + r.status);
+    const html = await r.text();
+    const $ = cheerio.load(html);
+    const items = [];
+
+    $('li.s-item').each((i, el) => {
+      const title = $(el).find('.s-item__title').text().trim();
+      const url = $(el).find('a.s-item__link').attr('href');
+      const priceText = $(el).find('.s-item__price').first().text().trim();
+      if (!title || !url || !priceText) return;
+      const m = priceText.match(/[\$£€]?([\d,]+(?:\.\d+)?)/);
+      if (!m) return;
+      const price = parseFloat(m[1].replace(/,/g, ''));
+      if (maxPrice && !isNaN(maxPrice)) {
+        if (price <= Number(maxPrice)) items.push({ title, price, url });
+      } else {
+        items.push({ title, price, url });
+      }
+    });
+
+    return res.json({ items });
+  } catch (err) {
+    console.error('eBay scan error', err);
+    return res.status(500).send('eBay scan failed');
   }
 });
 

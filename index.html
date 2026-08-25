@@ -22,7 +22,7 @@
         <section class="chat">
           <div id="messages" class="messages" aria-live="polite"></div>
           <form id="promptForm" class="prompt-form">
-            <input id="promptInput" placeholder="Tell the bot what to build or change (e.g. 'Add a hero with CTA')" autocomplete="off"/>
+            <input id="promptInput" placeholder="Tell the bot what to build or change (e.g. 'Add a hero with CTA' or 'scan ebay for 1998 Topps under $50')" autocomplete="off"/>
             <button type="submit">Send</button>
           </form>
         </section>
@@ -30,6 +30,16 @@
         <section class="history">
           <h3>Action History</h3>
           <ul id="historyList"></ul>
+        </section>
+
+        <section class="ebay-scan">
+          <h3>Scan eBay for Deals</h3>
+          <form id="ebayForm">
+            <input id="ebayQuery" placeholder="Search (e.g. '1998 Topps Chrome')" />
+            <input id="ebayMax" placeholder="Max price (USD)" />
+            <button type="submit">Scan eBay</button>
+          </form>
+          <div id="ebayResults" class="history"></div>
         </section>
       </aside>
 
